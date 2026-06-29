@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fangbuch 🎣</title>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- iOS-spezifisch -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fangbuch">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep: #0d1b2a;
+    --water: #1b4965;
+    --teal: #2d6a8a;
+    --foam: #bee9e8;
+    --gold: #e8b84b;
+    --sand: #f5ebe0;
+    --white: #fafafa;
+    --text: #0d1b2a;
+    --muted: #5a7a8a;
+    --danger: #c0392b;
+    --success: #1e8449;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(13,27,42,0.13);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--deep);
+    min-height: 100vh;
+    color: var(--white);
+    overflow-x: hidden;
+  }
+
+  /* === ANIMATED WATER BACKGROUND === */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(29,73,101,0.6) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(45,106,138,0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(13,27,42,0.9) 0%, transparent 60%);
+    z-index: 0;
+    animation: waterShift 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes waterShift {
+    0%   { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 1;   transform: scale(1.03); }
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 60px; }
+
+  /* === HEADER === */
+  header {
+    padding: 36px 24px 28px;
+    text-align: center;
+    border-bottom: 1px solid rgba(190,233,232,0.15);
+    position: relative;
+  }
+
+  .fish-icon {
+    font-size: 2.8rem;
+    display: block;
+    animation: bobble 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 12px rgba(232,184,75,0.5));
+  }
+
+  @keyframes bobble {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50%       { transform: translateY(-6px) rotate(3deg); }
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--white);
+    letter-spacing: -0.5px;
+    margin: 8px 0 4px;
+    line-height: 1.1;
+  }
+
+  h1 span { color: var(--gold); }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--foam);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  /* === TABS === */
+  .tabs {
+    display: flex;
+    margin: 20px 16px 0;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 50px;
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab.active {
+    background: var(--gold);
+    color: var(--deep);
+  }
+
+  /* === PANELS === */
+  .panel { display: none; padding: 20px 16px; animation: fadeUp 0.3s ease; }
+  .panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === ANGLER SELECTION === */
+  .angler-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .angler-btn {
+    padding: 20px 12px;
+    border: 2px solid rgba(190,233,232,0.2);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.04);
+    color: var(--white);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .angler-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--teal), var(--water));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .angler-btn span { position: relative; z-index: 1; }
+
+  .angler-btn:hover::before,
+  .angler-btn.selected::before { opacity: 1; }
+
+  .angler-btn.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold), 0 4px 20px rgba(232,184,75,0.3);
+  }
+
+  .angler-emoji { display: block; font-size: 1.6rem; margin-bottom: 6px; }
+
+  /* === FORM === */
+  .form-section {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(190,233,232,0.12);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(232,184,75,0.2);
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--foam);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(13,27,42,0.6);
+    border: 1.5px solid rgba(190,233,232,0.2);
+    border-radius: 10px;
+    color: var(--white);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23bee9e8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+  }
+
+  select option { background: var(--deep); color: var(--white); }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(232,184,75,0.15);
+  }
+
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+  /* === PHOTO UPLOAD === */
+  .photo-zone {
+    border: 2px dashed rgba(190,233,232,0.25);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .photo-zone:hover {
+    border-color: var(--gold);
+    background: rgba(232,184,75,0.05);
+  }
+
+  .photo-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .photo-icon { font-size: 2.2rem; display: block; margin-bottom: 8px; }
+
+  .photo-label {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .photo-preview {
+    margin-top: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .photo-preview img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+
+  /* === SUBMIT === */
+  .btn-submit {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--gold), #d4a035);
+    color: var(--deep);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 20px rgba(232,184,75,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(232,184,75,0.4);
+  }
+
+  .btn-submit:active { transform: translateY(0); }
+
+  .btn-submit.loading { opacity: 0.7; cursor: not-allowed; }
+
+  /* === SUCCESS FLASH === */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--success);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    z-index: 100;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--danger); }
+
+  /* === LOGBUCH === */
+  .log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .log-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .filter-row select {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .entry-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(190,233,232,0.1);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .entry-card:hover { border-color: rgba(232,184,75,0.3); }
+
+  .entry-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .entry-fish {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .entry-date {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .tag {
+    background: rgba(190,233,232,0.1);
+    border: 1px solid rgba(190,233,232,0.2);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    color: var(--foam);
+  }
+
+  .tag.angler { background: rgba(232,184,75,0.1); border-color: rgba(232,184,75,0.3); color: var(--gold); }
+
+  .entry-note {
+    margin-top: 10px;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.55);
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .entry-photo { margin-top: 10px; border-radius: 8px; overflow: hidden; }
+  .entry-photo img { width: 100%; max-height: 160px; object-fit: cover; display: block; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .big-fish { font-size: 4rem; display: block; margin-bottom: 16px; opacity: 0.4; }
+
+  /* === EXPORT === */
+  .export-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .btn-export {
+    flex: 1;
+    padding: 12px;
+    border: 1.5px solid rgba(190,233,232,0.25);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--foam);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .btn-export:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* === CONFIG PANEL === */
+  .config-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(190,233,232,0.12);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .config-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--gold);
+  }
+
+  .config-note {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  code {
+    background: rgba(190,233,232,0.1);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.85em;
+    color: var(--foam);
+    font-family: monospace;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #888;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .status-dot.ok { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .status-dot.err { background: var(--danger); }
+
+  .btn-small {
+    padding: 8px 16px;
+    border: 1.5px solid rgba(190,233,232,0.25);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--foam);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+  }
+
+  .btn-small:hover { border-color: var(--gold); color: var(--gold); }
+
+  .divider { height: 1px; background: rgba(190,233,232,0.1); margin: 16px 0; }
+
+  @media (max-width: 380px) {
+    h1 { font-size: 1.8rem; }
+    .angler-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <span class="fish-icon">🎣</span>
+    <h1>Fang<span>buch</span></h1>
+    <p class="subtitle">Specimen Group Berlin · Digitales Logbuch</p>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('eintrag')">✏️ Eintrag</button>
+    <button class="tab" onclick="switchTab('logbuch')">📋 Logbuch</button>
+    <button class="tab" onclick="switchTab('einstellungen')">⚙️ Setup</button>
+  </div>
+
+  <!-- ===== TAB: EINTRAG ===== -->
+  <div id="tab-eintrag" class="panel active">
+
+    <!-- Angler Auswahl -->
+    <div class="form-section">
+      <div class="section-label">Angler</div>
+      <div class="angler-grid" id="anglerGrid">
+        <!-- dynamisch befüllt -->
+      </div>
+    </div>
+
+    <!-- Fang Details -->
+    <div class="form-section">
+      <div class="section-label">Fang</div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Datum</label>
+          <input type="date" id="f_datum">
+        </div>
+        <div class="field">
+          <label>Uhrzeit</label>
+          <input type="time" id="f_uhrzeit">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Gewässer</label>
+        <select id="f_gewaesser">
+          <option value="">— auswählen —</option>
+          <option>Rädelpool</option>
+          <option>Adolf</option>
+          <option>Brenta</option>
+          <option>Spree</option>
+          <option>Havel</option>
+          <option>Heiligenhafen</option>
+          <option>MD-Kanal</option>
+          <option>CC Lake</option>
+          <option>Nordsee</option>
+          <option value="__other__">Anderes…</option>
+        </select>
+      </div>
+      <div class="field" id="gewaesser_other_field" style="display:none;">
+        <label>Anderes Gewässer</label>
+        <input type="text" id="f_gewaesser_other" placeholder="Name eingeben">
+      </div>
+
+      <div class="field">
+        <label>Fischart</label>
+        <select id="f_fischart">
+          <option value="">— auswählen —</option>
+          <option>Bachforelle</option>
+          <option>Barbe</option>
+          <option>Barsch</option>
+          <option>Brassen</option>
+          <option>Dorsch</option>
+          <option>Graser</option>
+          <option>Hecht</option>
+          <option>Hornhecht</option>
+          <option>Karpfen</option>
+          <option>Köhler</option>
+          <option>Meerforelle</option>
+          <option>Rapfen</option>
+          <option>Regenbogenforelle</option>
+          <option>Schlei</option>
+          <option>Seeforelle</option>
+          <option>Stör</option>
+          <option>Weißfisch</option>
+          <option>Wittling</option>
+          <option>Zander</option>
+          <option value="__other__">Andere…</option>
+        </select>
+      </div>
+      <div class="field" id="fischart_other_field" style="display:none;">
+        <label>Andere Fischart</label>
+        <input type="text" id="f_fischart_other" placeholder="Fischart eingeben">
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Größe (cm)</label>
+          <input type="number" id="f_groesse" placeholder="z.B. 65">
+        </div>
+        <div class="field">
+          <label>Gewicht (kg)</label>
+          <input type="number" id="f_gewicht" step="0.1" placeholder="z.B. 3.2">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Köder</label>
+        <input type="text" id="f_koeder" placeholder="z.B. Candy Corn, Wobbler…">
+      </div>
+
+      <div class="field">
+        <label>Bemerkungen</label>
+        <textarea id="f_bemerkungen" placeholder="Besonderheiten, Rücksetzer, Wetter…"></textarea>
+      </div>
+    </div>
+
+    <!-- Foto -->
+    <div class="form-section">
+      <div class="section-label">Foto</div>
+      <div class="photo-zone" onclick="document.getElementById('f_foto').click()">
+        <input type="file" id="f_foto" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto(this)">
+        <span class="photo-icon">📸</span>
+        <div class="photo-label">Foto aufnehmen oder aus Galerie<br><small style="opacity:0.6">optional</small></div>
+        <div class="photo-preview" id="photoPreview">
+          <img id="photoImg" src="" alt="Vorschau">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitEntry()">
+      🎣 Fang eintragen
+    </button>
+  </div>
+
+  <!-- ===== TAB: LOGBUCH ===== -->
+  <div id="tab-logbuch" class="panel">
+    <div class="log-header">
+      <div class="log-title">📋 Alle Fänge</div>
+      <span id="entryCount" style="font-size:0.85rem;color:var(--muted)"></span>
+    </div>
+
+    <div class="export-bar">
+      <button class="btn-export" onclick="exportCSV()">⬇️ CSV Export</button>
+      <button class="btn-export" onclick="exportJSON()">⬇️ JSON Export</button>
+    </div>
+
+    <div class="filter-row">
+      <select id="filterAngler" onchange="renderLog()">
+        <option value="">Alle Angler</option>
+      </select>
+      <select id="filterFisch" onchange="renderLog()">
+        <option value="">Alle Fische</option>
+      </select>
+    </div>
+
+    <div id="logEntries"></div>
+  </div>
+
+  <!-- ===== TAB: EINSTELLUNGEN ===== -->
+  <div id="tab-einstellungen" class="panel">
+
+    <div class="config-box">
+      <div class="config-title">🔗 Google Sheets Verbindung</div>
+      <div class="field">
+        <label>Google Apps Script URL</label>
+        <input type="url" id="cfg_scriptUrl" placeholder="https://script.google.com/macros/s/…/exec">
+      </div>
+      <div style="display:flex;align-items:center;margin-top:8px;font-size:0.85rem;">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText" style="color:var(--muted)">Nicht konfiguriert</span>
+      </div>
+      <button class="btn-small" onclick="testConnection()">🔌 Verbindung testen</button>
+      <button class="btn-small" onclick="saveConfig()" style="margin-left:8px;">💾 Speichern</button>
+
+      <div class="divider"></div>
+      <div class="config-note">
+        <strong>Einrichtung in 3 Schritten:</strong><br><br>
+        1. Erstelle ein neues <strong>Google Sheet</strong> in eurem Vereins-Drive mit den Spalten:<br>
+        <code>Timestamp, Angler, Datum, Uhrzeit, Gewässer, Fischart, Größe_cm, Gewicht_kg, Köder, Bemerkungen, Foto_URL</code><br><br>
+        2. Öffne <strong>Erweiterungen → Apps Script</strong> im Sheet und füge das Skript (unten) ein. Deploye es als Web App (Zugriff: Jeder).<br><br>
+        3. Kopiere die Script-URL hier rein und klicke "Speichern".
+      </div>
+    </div>
+
+    <div class="config-box">
+      <div class="config-title">📜 Google Apps Script Code</div>
+      <div class="config-note" style="font-family:monospace;font-size:0.75rem;background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;line-height:1.7;white-space:pre-wrap;color:var(--foam);overflow-x:auto;">const SHEET_NAME = 'Fangbuch';
+
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let ws = ss.getSheetByName(SHEET_NAME);
+  if (!ws) {
+    ws = ss.insertSheet(SHEET_NAME);
+    ws.appendRow(['Timestamp','Angler','Datum','Uhrzeit',
+      'Gewässer','Fischart','Größe_cm','Gewicht_kg',
+      'Köder','Bemerkungen','Foto_URL']);
+  }
+  const d = JSON.parse(e.postData.contents);
+  ws.appendRow([new Date(), d.angler, d.datum,
+    d.uhrzeit, d.gewaesser, d.fischart,
+    d.groesse, d.gewicht, d.koeder,
+    d.bemerkungen, d.foto_url || '']);
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ws = ss.getSheetByName(SHEET_NAME);
+  if (!ws) return json({rows:[]});
+  const rows = ws.getDataRange().getValues();
+  const headers = rows.shift();
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      ok:true, headers, rows
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+      <button class="btn-small" onclick="copyScript()">📋 Code kopieren</button>
+    </div>
+
+    <div class="config-box">
+      <div class="config-title">👥 Angler verwalten</div>
+      <div id="anglerList" style="margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="newAnglerInput" placeholder="Neuer Angler…" style="flex:1">
+        <button class="btn-small" onclick="addAngler()" style="margin-top:0;">+ Hinzufügen</button>
+      </div>
+    </div>
+
+    <div class="config-box">
+      <div class="config-title">💾 Offline-Modus</div>
+      <div class="config-note">
+        Alle Einträge werden auch lokal im Browser gespeichert. Ohne Google Sheets funktioniert die App vollständig offline – der Export per CSV bleibt immer verfügbar.
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-small" onclick="clearLocalData()" style="border-color:rgba(192,57,43,0.4);color:rgba(192,57,43,0.8);">🗑 Lokale Daten löschen</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// =============================================
+// STATE
+// =============================================
+let state = {
+  angler: ['Uwe', 'Berger', 'Eng', 'Bone'],
+  selectedAngler: null,
+  entries: [],
+  scriptUrl: ''
+};
+
+const ANGLER_EMOJIS = ['🎣','🐟','🦆','🐠','🐡','🦈'];
+
+// =============================================
+// INIT
+// =============================================
+window.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  setTodayDate();
+  renderAnglerGrid();
+  renderAnglerConfig();
+  renderLog();
+  document.getElementById('f_gewaesser').addEventListener('change', function() {
+    document.getElementById('gewaesser_other_field').style.display = this.value === '__other__' ? 'block' : 'none';
+  });
+  document.getElementById('f_fischart').addEventListener('change', function() {
+    document.getElementById('fischart_other_field').style.display = this.value === '__other__' ? 'block' : 'none';
+  });
+  if (state.scriptUrl) {
+    document.getElementById('cfg_scriptUrl').value = state.scriptUrl;
+  }
+});
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('fangbuch_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state.angler = parsed.angler || state.angler;
+      state.entries = parsed.entries || [];
+      state.scriptUrl = parsed.scriptUrl || '';
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('fangbuch_state', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function setTodayDate() {
+  const now = new Date();
+  document.getElementById('f_datum').value = now.toISOString().split('T')[0];
+  document.getElementById('f_uhrzeit').value = now.toTimeString().slice(0,5);
+}
+
+// =============================================
+// TABS
+// =============================================
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['eintrag','logbuch','einstellungen'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'logbuch') renderLog();
+}
+
+// =============================================
+// ANGLER
+// =============================================
+function renderAnglerGrid() {
+  const grid = document.getElementById('anglerGrid');
+  grid.innerHTML = state.angler.map((a, i) => `
+    <button class="angler-btn ${state.selectedAngler === a ? 'selected' : ''}" onclick="selectAngler('${a}')">
+      <span class="angler-emoji">${ANGLER_EMOJIS[i % ANGLER_EMOJIS.length]}</span>
+      <span>${a}</span>
+    </button>
+  `).join('');
+}
+
+function selectAngler(name) {
+  state.selectedAngler = name;
+  renderAnglerGrid();
+}
+
+function renderAnglerConfig() {
+  const list = document.getElementById('anglerList');
+  list.innerHTML = state.angler.map(a => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(190,233,232,0.08);">
+      <span>${a}</span>
+      <button onclick="removeAngler('${a}')" style="background:none;border:none;color:rgba(192,57,43,0.7);cursor:pointer;font-size:1.1rem;">✕</button>
+    </div>
+  `).join('');
+}
+
+function addAngler() {
+  const input = document.getElementById('newAnglerInput');
+  const name = input.value.trim();
+  if (!name || state.angler.includes(name)) return;
+  state.angler.push(name);
+  input.value = '';
+  saveState();
+  renderAnglerGrid();
+  renderAnglerConfig();
+}
+
+function removeAngler(name) {
+  state.angler = state.angler.filter(a => a !== name);
+  if (state.selectedAngler === name) state.selectedAngler = null;
+  saveState();
+  renderAnglerGrid();
+  renderAnglerConfig();
+}
+
+// =============================================
+// FOTO PREVIEW
+// =============================================
+function previewPhoto(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('photoImg').src = e.target.result;
+    document.getElementById('photoPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function getPhotoBase64() {
+  return new Promise(resolve => {
+    const file = document.getElementById('f_foto').files[0];
+    if (!file) { resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+// =============================================
+// SUBMIT
+// =============================================
+async function submitEntry() {
+  if (!state.selectedAngler) { showToast('Bitte zuerst einen Angler auswählen!', true); return; }
+
+  const gewaesser = document.getElementById('f_gewaesser').value === '__other__'
+    ? document.getElementById('f_gewaesser_other').value.trim()
+    : document.getElementById('f_gewaesser').value;
+
+  const fischart = document.getElementById('f_fischart').value === '__other__'
+    ? document.getElementById('f_fischart_other').value.trim()
+    : document.getElementById('f_fischart').value;
+
+  if (!gewaesser || !fischart) { showToast('Gewässer und Fischart sind Pflichtfelder!', true); return; }
+
+  const foto = await getPhotoBase64();
+
+  const entry = {
+    id: Date.now(),
+    angler: state.selectedAngler,
+    datum: document.getElementById('f_datum').value,
+    uhrzeit: document.getElementById('f_uhrzeit').value,
+    gewaesser,
+    fischart,
+    groesse: document.getElementById('f_groesse').value,
+    gewicht: document.getElementById('f_gewicht').value,
+    koeder: document.getElementById('f_koeder').value,
+    bemerkungen: document.getElementById('f_bemerkungen').value,
+    foto_url: foto
+  };
+
+  // Lokal speichern
+  state.entries.unshift(entry);
+  saveState();
+
+  // Google Sheets senden (wenn konfiguriert)
+  if (state.scriptUrl) {
+    const btn = document.getElementById('submitBtn');
+    btn.classList.add('loading');
+    btn.textContent = '⏳ Wird gesendet…';
+    try {
+      const payload = {...entry};
+      if (foto && foto.length > 100000) payload.foto_url = '(Foto zu groß für Sheets)';
+      await fetch(state.scriptUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      showToast('✅ Fang eingetragen & in Sheets gespeichert!');
+    } catch(e) {
+      showToast('✅ Lokal gespeichert (Sheets nicht erreichbar)', false);
+    }
+    btn.classList.remove('loading');
+    btn.textContent = '🎣 Fang eintragen';
+  } else {
+    showToast('✅ Fang lokal gespeichert!');
+  }
+
+  resetForm();
+}
+
+function resetForm() {
+  setTodayDate();
+  document.getElementById('f_gewaesser').value = '';
+  document.getElementById('f_fischart').value = '';
+  document.getElementById('f_groesse').value = '';
+  document.getElementById('f_gewicht').value = '';
+  document.getElementById('f_koeder').value = '';
+  document.getElementById('f_bemerkungen').value = '';
+  document.getElementById('f_foto').value = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('gewaesser_other_field').style.display = 'none';
+  document.getElementById('fischart_other_field').style.display = 'none';
+}
+
+// =============================================
+// LOGBUCH
+// =============================================
+function renderLog() {
+  const filterAngler = document.getElementById('filterAngler').value;
+  const filterFisch = document.getElementById('filterFisch').value;
+
+  // Filter-Dropdowns befüllen
+  const anglerSel = document.getElementById('filterAngler');
+  const fischSel = document.getElementById('filterFisch');
+  const currentA = anglerSel.value, currentF = fischSel.value;
+
+  const uniqueAngler = [...new Set(state.entries.map(e => e.angler))];
+  const uniqueFisch = [...new Set(state.entries.map(e => e.fischart))];
+
+  anglerSel.innerHTML = '<option value="">Alle Angler</option>' +
+    uniqueAngler.map(a => `<option ${a===currentA?'selected':''} value="${a}">${a}</option>`).join('');
+  fischSel.innerHTML = '<option value="">Alle Fische</option>' +
+    uniqueFisch.map(f => `<option ${f===currentF?'selected':''} value="${f}">${f}</option>`).join('');
+
+  let entries = state.entries;
+  if (filterAngler) entries = entries.filter(e => e.angler === filterAngler);
+  if (filterFisch) entries = entries.filter(e => e.fischart === filterFisch);
+
+  document.getElementById('entryCount').textContent = `${entries.length} Einträge`;
+
+  const container = document.getElementById('logEntries');
+  if (!entries.length) {
+    container.innerHTML = `<div class="empty-state">
+      <span class="big-fish">🐟</span>
+      Noch keine Fänge eingetragen.<br>Zeit zum Angeln! 🎣
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = entries.map(e => `
+    <div class="entry-card">
+      <div class="entry-top">
+        <div class="entry-fish">${e.fischart}</div>
+        <div class="entry-date">${formatDate(e.datum)}<br>${e.uhrzeit || ''}</div>
+      </div>
+      <div class="entry-tags">
+        <span class="tag angler">👤 ${e.angler}</span>
+        <span class="tag">🏞 ${e.gewaesser}</span>
+        ${e.groesse ? `<span class="tag">📏 ${e.groesse} cm</span>` : ''}
+        ${e.gewicht ? `<span class="tag">⚖️ ${e.gewicht} kg</span>` : ''}
+        ${e.koeder ? `<span class="tag">🪝 ${e.koeder}</span>` : ''}
+      </div>
+      ${e.bemerkungen ? `<div class="entry-note">${e.bemerkungen}</div>` : ''}
+      ${e.foto_url && e.foto_url.startsWith('data:') ? `<div class="entry-photo"><img src="${e.foto_url}" alt="Fangfoto"></div>` : ''}
+    </div>
+  `).join('');
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const parts = d.split('-');
+  if (parts.length !== 3) return d;
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+// =============================================
+// EXPORT
+// =============================================
+function exportCSV() {
+  const headers = ['Timestamp','Angler','Datum','Uhrzeit','Gewässer','Fischart','Größe_cm','Gewicht_kg','Köder','Bemerkungen'];
+  const rows = state.entries.map(e => [
+    new Date(e.id).toISOString(), e.angler, e.datum, e.uhrzeit,
+    e.gewaesser, e.fischart, e.groesse, e.gewicht, e.koeder, e.bemerkungen
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  downloadFile('fangbuch.csv', csv, 'text/csv;charset=utf-8;');
+  showToast('📥 CSV heruntergeladen!');
+}
+
+function exportJSON() {
+  const data = state.entries.map(e => {const c={...e}; delete c.foto_url; return c;});
+  downloadFile('fangbuch.json', JSON.stringify(data, null, 2), 'application/json');
+  showToast('📥 JSON heruntergeladen!');
+}
+
+function downloadFile(name, content, type) {
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// =============================================
+// CONFIG
+// =============================================
+function saveConfig() {
+  state.scriptUrl = document.getElementById('cfg_scriptUrl').value.trim();
+  saveState();
+  showToast('💾 Einstellungen gespeichert!');
+  updateStatus('ok', 'URL gespeichert – Verbindung testen');
+}
+
+async function testConnection() {
+  const url = document.getElementById('cfg_scriptUrl').value.trim();
+  if (!url) { showToast('Bitte zuerst eine URL eingeben!', true); return; }
+  updateStatus(null, '⏳ Verbinde…');
+  try {
+    const res = await fetch(url + '?test=1');
+    const data = await res.json();
+    if (data.ok !== false) {
+      updateStatus('ok', '✅ Verbindung erfolgreich!');
+    } else {
+      updateStatus('err', '⚠️ Skript antwortet, aber mit Fehler');
+    }
+  } catch(e) {
+    updateStatus('err', '❌ Verbindung fehlgeschlagen');
+  }
+}
+
+function updateStatus(type, text) {
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot' + (type ? ' '+type : '');
+  document.getElementById('statusText').textContent = text;
+}
+
+function copyScript() {
+  const code = document.querySelector('.config-note[style*="monospace"]').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('📋 Code kopiert!'));
+}
+
+function clearLocalData() {
+  if (!confirm('Alle lokal gespeicherten Fänge wirklich löschen?')) return;
+  state.entries = [];
+  saveState();
+  renderLog();
+  showToast('🗑 Lokale Daten gelöscht');
+}
+
+// =============================================
+// TOAST
+// =============================================
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>
